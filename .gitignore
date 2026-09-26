@@ -18,8 +18,6 @@ infra/monitoring/metrics-token.txt
 node_modules/
 frontend/dist/
 
-data/evaluation/local_*/
-
 # Django
 backend/media/
 backend/staticfiles/
