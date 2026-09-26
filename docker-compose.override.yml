@@ -1,0 +1,9 @@
+services:
+  backend:
+    image: rrs-backend:latest
+    ports: !override
+      - "8001:8000"
+    entrypoint: []
+    command: ["/bin/sh", "/app/entrypoint.sh"]
+  frontend:
+    image: rrs-frontend:latest

@@ -1,0 +1,7 @@
+{
+  "checks": [
+    {"match": {"kind": "retrieval", "source": "human", "target": "document", "mode": "hybrid", "k": 5}, "metric": "recall_at_k", "min": 0.8, "min_samples": 20, "min_coverage": 1.0},
+    {"match": {"kind": "agent", "source": "human"}, "metric": "task_success", "min": 0.85, "min_samples": 20, "min_coverage": 1.0},
+    {"match": {"kind": "agent", "source": "human"}, "metric": "rule_pass", "min": 0.95, "min_samples": 20, "min_coverage": 1.0}
+  ]
+}

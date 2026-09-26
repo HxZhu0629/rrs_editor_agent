@@ -1,0 +1,38 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.venv-*/
+venv/
+
+# Local secrets and runtime state
+.env
+backend/.env
+frontend/.env
+infra/monitoring/metrics-token.txt
+*.log
+
+# Node
+node_modules/
+frontend/dist/
+
+data/evaluation/local_*/
+
+# Django
+backend/media/
+backend/staticfiles/
+backend/db.sqlite3
+
+# Generated data and local research exports
+data/backups/
+data/experiments/
+data/download*.log
+data/*.json
+data/evaluation/local_*/
+data/evaluation/demo_report*/
+
+# IDE
+.idea/
+.vscode/

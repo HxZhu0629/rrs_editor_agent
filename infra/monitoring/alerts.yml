@@ -1,0 +1,47 @@
+groups:
+  - name: rrs-reliability
+    rules:
+      - alert: RRSMetricsUnavailable
+        expr: up{job=~"rrs-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RRS scrape target unavailable; check service health and metrics token"
+      - record: rrs:http_error_ratio:5m
+        expr: (sum(rate(rrs_http_requests_total{status=~"5..|429"}[5m])) or vector(0)) / clamp_min(sum(rate(rrs_http_requests_total{status=~"2..|3..|5..|429"}[5m])), 0.001)
+      - alert: RRSAvailabilityBudgetBurn
+        expr: rrs:http_error_ratio:5m > 0.0144 and sum(increase(rrs_http_requests_total[5m])) >= 20
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP errors exceed 14.4 times the proposed 99.9% SLO budget"
+      - alert: RRSAgentQueueLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(rrs_agent_queue_seconds_bucket[10m]))) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent queue P95 exceeds 30 seconds"
+      - alert: RRSAgentStalled
+        expr: rrs_agent_oldest_pending_seconds > 1200
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Agent exceeds queue plus execution budget; inspect workers and run reconciliation"
+      - alert: RRSAgentIncomplete
+        expr: sum(rate(rrs_agent_executions_total{outcome=~"incomplete|exception|queue_timeout|execution_timeout"}[15m])) / clamp_min(sum(rate(rrs_agent_executions_total{outcome!="waiting_approval"}[15m])), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agent execution failure ratio exceeds 5%; inspect stop reasons and traces"
+      - alert: RRSDependencyDegraded
+        expr: sum by (component) (increase(rrs_degradations_total[5m])) >= 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dependency fallback or admission rejection repeatedly triggered"
