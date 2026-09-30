@@ -1,5 +1,7 @@
 # RRS：审稿人推荐与编辑 Agent 工作台
 
+项目介绍网页：[在线导览](https://HxZhu0629.github.io/rrs_editor_agent/)（需首次启用 GitHub Pages 并完成部署）。包含产品流程、两类检索原理、Agent 交互演示、工程架构和运行说明。[网站源码与发布步骤](site/README.md)。
+
 RRS（Reviewer Recommendation System）是一套面向期刊编辑的开源原型。它把“稿件导入、元数据确认、证据检索、审稿人推荐、结果解释、邀请草稿”串成一个可追溯的工作流，并提供一个带工具治理和人工审批的编辑 Agent。
 
 项目定位是**编辑决策辅助**：系统返回候选人、证据和草稿，最终的审稿人选择、身份确认、利益冲突判断和邮件发送仍由编辑负责。当前 API 默认允许匿名访问，适合本地开发和演示；正式部署前需要补充认证、权限、TLS、备份和媒体访问控制。
@@ -223,4 +225,3 @@ git branch -M main
 git remote add origin https://github.com/HxZhu0629/rrs-editor-agent.git
 git push -u origin main
 ~~~
-

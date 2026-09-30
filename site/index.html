@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从产品流程到技术实现，详细了解 RRS 审稿人推荐与编辑 Agent：稿件解析、混合 RAG、证据推荐、LangGraph、MCP 与质量评测。">
+  <meta name="theme-color" content="#193b35">
+  <meta property="og:title" content="RRS · 让每一次推荐，都有据可循">
+  <meta property="og:description" content="一份可交互的项目导览，讲清编辑工作流、RAG 检索、Agent 执行与工程边界。">
+  <meta property="og:type" content="website">
+  <title>RRS · 审稿人推荐与编辑 Agent | 项目全解</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到正文</a>
+  <header class="header">
+    <a class="brand" href="#" aria-label="RRS 首页"><span class="brand-symbol">R</span><span>RRS<span class="brand-caption">PROJECT FIELD GUIDE</span></span></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="navigation">目录 <span aria-hidden="true">☰</span></button>
+    <nav id="navigation" aria-label="主导航">
+      <a href="#workflow">产品流程</a><a href="#retrieval">检索原理</a><a href="#agent">Agent</a><a href="#architecture">工程架构</a><a href="#start">运行项目</a>
+    </nav>
+    <a class="repo-link" href="https://github.com/HxZhu0629/rrs_editor_agent">GitHub <span aria-hidden="true">↗</span></a>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-square"></span> EDITORIAL INTELLIGENCE / 项目全解</p>
+        <h1 id="hero-title">让每一次推荐，<br>都有<span class="accent">据可循。</span></h1>
+        <p class="hero-description">从一篇稿件，到一份有证据的审稿人名单。<br>RRS 把文档解析、混合检索和编辑 Agent，<br class="desktop-break">连接成一条可以复核的工作流。</p>
+        <div class="hero-actions"><a class="button primary" href="#workflow">从产品流程开始 <span aria-hidden="true">↘</span></a><a class="text-link" href="#architecture">直接看技术实现 →</a></div>
+        <div class="hero-note"><span class="note-mark">i</span> 本页为静态项目导览。交互演示使用预设内容，不上传稿件、不调用模型。</div>
+      </div>
+      <div class="hero-visual" aria-label="稿件、证据和人工决策的关系示意">
+        <div class="visual-topline"><span>FROM MANUSCRIPT TO DECISION</span><span>01 — 04</span></div>
+        <div class="paper-sheet"><div class="paper-label"><span>01 / MANUSCRIPT</span><span>PDF · DOCX</span></div><h2>一篇待评审的稿件</h2><div class="paper-line wide"></div><div class="paper-line"></div><div class="paper-line short"></div><div class="tags"><span>研究主题</span><span>作者与机构</span><span>文内证据</span></div></div>
+        <div class="connector" aria-hidden="true">↓</div>
+        <div class="retrieval-mini"><span>02 / RETRIEVAL</span><strong>多路召回 · 冲突过滤 · 重排</strong><div class="route-lines"><span>词汇</span><span>语义</span><span>元数据</span></div></div>
+        <div class="connector" aria-hidden="true">↓</div>
+        <div class="evidence-mini"><span class="evidence-symbol" aria-hidden="true">◎</span><div><small>03 / EVIDENCE</small><strong>候选人 + 代表论文 + 推荐依据</strong></div></div>
+        <div class="human-stamp"><span aria-hidden="true">✓</span> 04 / 编辑复核与决策</div>
+      </div>
+    </section>
+
+    <div class="stack-strip"><div class="wrap"><span>BUILT WITH</span><strong>Vue 3</strong><strong>Django</strong><strong>LangGraph</strong><strong>pgvector</strong><strong>Celery</strong><strong>MCP</strong></div></div>
+
+    <section class="section wrap" id="overview">
+      <div class="section-heading"><div><p class="eyebrow">01 / PRODUCT THINKING</p><h2>给编辑的，是决策依据。</h2></div><p>期刊编辑需要判断谁懂这篇稿件、为什么适合、是否存在冲突。RRS 围绕这三个问题组织信息。</p></div>
+      <div class="three-grid value-grid">
+        <article><span class="number">01</span><h3>把稿件变成可检索的证据</h3><p>PDF / DOCX 解析为结构化内容，抽取元数据，保留章节与可用页码；编辑确认作者和机构后，形成推荐所需的基础信息。</p><span class="value-label">输入理解</span></article>
+        <article><span class="number">02</span><h3>把候选人和论文连起来</h3><p>从本地审稿人画像与论文库召回候选人，融合多个排序信号。推荐结果附带代表论文、召回路线和评分拆解，便于逐项核对。</p><span class="value-label">可解释推荐</span></article>
+        <article><span class="number">03</span><h3>把重复操作交给编辑助手</h3><p>用自然语言发起投稿检查、调整筛选条件、追问依据或准备邀请草稿。Agent 选择受限工具执行任务，编辑保留最终决定权。</p><span class="value-label">人机协作</span></article>
+      </div>
+    </section>
+
+    <section class="section tinted" id="workflow">
+      <div class="wrap">
+        <div class="section-heading"><div><p class="eyebrow">02 / EDITORIAL WORKFLOW</p><h2>跟着一篇稿件，走完全过程。</h2></div><p>点击每个阶段，查看用户操作、系统处理和真实代码入口。</p></div>
+        <div class="workflow-layout">
+          <div class="step-list" role="tablist" aria-label="稿件处理阶段" aria-orientation="vertical">
+            <button id="step-tab-0" role="tab" aria-selected="true" aria-controls="workflow-panel" data-step="0"><span>01</span><div><strong>上传与解析</strong><small>从文件到结构化内容</small></div><span class="step-arrow" aria-hidden="true">↗</span></button>
+            <button id="step-tab-1" role="tab" aria-selected="false" tabindex="-1" aria-controls="workflow-panel" data-step="1"><span>02</span><div><strong>人工确认</strong><small>让输入信息可用于决策</small></div><span class="step-arrow" aria-hidden="true">↗</span></button>
+            <button id="step-tab-2" role="tab" aria-selected="false" tabindex="-1" aria-controls="workflow-panel" data-step="2"><span>03</span><div><strong>推荐审稿人</strong><small>筛选、召回与排序</small></div><span class="step-arrow" aria-hidden="true">↗</span></button>
+            <button id="step-tab-3" role="tab" aria-selected="false" tabindex="-1" aria-controls="workflow-panel" data-step="3"><span>04</span><div><strong>复核证据</strong><small>每个判断都有出处</small></div><span class="step-arrow" aria-hidden="true">↗</span></button>
+            <button id="step-tab-4" role="tab" aria-selected="false" tabindex="-1" aria-controls="workflow-panel" data-step="4"><span>05</span><div><strong>对话与邀请草稿</strong><small>自然语言驱动工具</small></div><span class="step-arrow" aria-hidden="true">↗</span></button>
+          </div>
+          <article class="workflow-panel" id="workflow-panel" role="tabpanel" aria-labelledby="step-tab-0" tabindex="0">
+            <div class="panel-top"><span class="pill">流程说明 · 非实时运行</span><span id="step-counter">01 / 05</span></div>
+            <h3 id="step-title">让文件成为可复核的输入</h3>
+            <p id="step-description">编辑上传 PDF 或 DOCX，再手动触发文档解析：Unstructured 生成 Markdown、文档块和质量信号，DeepSeek 提取标题、摘要、关键词及作者信息。</p>
+            <div class="flow-art" id="step-art"><span>PDF / DOCX</span><b aria-hidden="true">→</b><span>结构化内容</span><b aria-hidden="true">→</b><span>待确认元数据</span></div>
+            <dl class="step-facts"><div><dt>保存什么</dt><dd id="step-output">Manuscript、ExtractionRun、父子 DocumentChunk；解析结果和模型输出可追溯。</dd></div><div><dt>关键边界</dt><dd id="step-boundary">解析在 HTTP 请求内同步完成；分块后不自动批量生成向量，可用回填命令建立索引。</dd></div></dl>
+            <div class="code-reference"><span>代码入口</span><a id="step-source" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/backend/apps/extraction/views.py">extraction/views.py ↗</a></div>
+          </article>
+        </div>
+        <noscript><p class="notice">启用 JavaScript 可切换各阶段。完整流程：上传解析 → 人工确认元数据 → 过滤冲突并推荐 → 核对代表论文 → 对话调整条件、生成邀请草稿。下方技术说明无需 JavaScript 即可阅读。</p></noscript>
+      </div>
+    </section>
+
+    <section class="section wrap" id="retrieval">
+      <div class="section-heading"><div><p class="eyebrow">03 / RETRIEVAL EXPLAINED</p><h2>两类检索，回答不同问题。</h2></div><p>文档 RAG 查“稿件写了什么”；审稿人推荐查“谁可能适合评审”。二者共享部分基础设施，但数据和排序逻辑不同。</p></div>
+      <div class="tab-bar" role="tablist" aria-label="检索类型"><button id="rag-tab-document" role="tab" aria-controls="rag-document" aria-selected="true" data-panel="rag-document">稿件证据检索 <span>Document RAG</span></button><button id="rag-tab-reviewer" role="tab" aria-controls="rag-reviewer" aria-selected="false" tabindex="-1" data-panel="rag-reviewer">审稿人推荐 <span>Reviewer Retrieval</span></button></div>
+      <article class="retrieval-panel" id="rag-document" role="tabpanel" aria-labelledby="rag-tab-document" tabindex="0">
+        <div class="retrieval-intro"><span class="large-symbol" aria-hidden="true">⌕</span><div><h3>用小块匹配，用大块提供上下文。</h3><p>例如：“这篇稿件如何评估检索效果？”系统在当前成功解析的稿件中找证据，返回命中的子块以及所属父章节。</p></div></div>
+        <ol class="pipeline"><li><strong>父子分块</strong><span>章节 → 细粒度片段</span></li><li><strong>双路召回</strong><span>BM25 + 向量</span></li><li><strong>RRF 融合</strong><span>按排名合并候选</span></li><li><strong>可选增强</strong><span>重排 / 反思</span></li><li><strong>证据返回</strong><span>片段 + 父级上下文</span></li></ol>
+        <div class="two-grid explanation-grid"><div><h4>为什么要分层切块？</h4><p>父块目标约 1,600 个估算 token，子块目标 480，重叠 64。短片段方便定位，父章节保留语境。表格作为原子块保存，即使超出目标长度也会保留并标记。</p><p class="muted">长度使用 heuristic_cjk_word_v1 估算，不是模型 tokenizer 的精确计数。</p></div><div><h4>为什么同时用词汇和向量？</h4><p>BM25 擅长术语匹配；Ollama 向量用于语义相似度检索。RRF 以各路排名融合结果，避免直接相加不同量纲的分数。PostgreSQL 支持 pgvector；兼容路径使用 JSON 向量和内存计算。</p></div></div>
+        <details><summary>展开可选增强与故障降级</summary><div class="detail-body"><ul><li><b>Query Rewrite / HyDE：</b>默认关闭；分别改写问题、生成用于检索的假设性文档。假设文档不能作为事实依据。</li><li><b>Cross-Encoder：</b>配置 RERANKER_MODEL 并安装可选依赖后生效；失败回退到融合排序。</li><li><b>Self-RAG：</b>可选让模型评估证据支持程度，模型判断仍需复核。</li><li><b>CRAG：</b>默认关闭，低质量时尝试调用自行配置的外部搜索适配器；仓库未内置可直接使用的搜索服务。</li><li><b>向量服务故障：</b>保留 BM25，返回 degraded、degraded_reasons 和 route_status。查询增强本身失败仍可能让请求失败。</li></ul><p>未经过重排或反思验证的非空结果可标记为 unverified；检索分数不能直接解释为“结论可信概率”。</p></div></details>
+        <a class="source-link" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/backend/apps/extraction/vector_search.py">阅读文档检索实现 <span aria-hidden="true">↗</span></a>
+      </article>
+      <article class="retrieval-panel" id="rag-reviewer" role="tabpanel" aria-labelledby="rag-tab-reviewer" tabindex="0">
+        <div class="retrieval-intro"><span class="large-symbol" aria-hidden="true">◎</span><div><h3>先确定候选资格，再比较匹配程度。</h3><p>输入为稿件标题、摘要、关键词与作者机构。候选数据来自本地审稿人画像、历史论文和合作者关系。</p></div></div>
+        <ol class="pipeline"><li><strong>冲突过滤</strong><span>机构 / 近年合作者</span></li><li><strong>三路召回</strong><span>sparse / dense / metadata</span></li><li><strong>融合与重排</strong><span>RRF + 可选模型</span></li><li><strong>业务排序</strong><span>活跃度 / 工作量</span></li><li><strong>候选名单</strong><span>代表论文 + 评分拆解</span></li></ol>
+        <div class="two-grid explanation-grid"><div><h4>三路召回各看什么？</h4><p>Sparse 在 PostgreSQL 上使用全文检索，回退路径按词汇重叠评分；Dense 比较稿件与候选论文的向量；Metadata 利用专业关键词和近期发表数量。审稿人稀疏路线并非文档 RAG 中的 BM25。</p></div><div><h4>默认如何排序？</h4><p>未启用 Cross-Encoder 时，重排基线为 0.55 × dense + 0.30 × sparse + 0.15 × metadata，再加入融合与活跃度奖励、工作量惩罚。页面展示分数组成，支持编辑复核。</p></div></div>
+        <details><summary>展开筛选约束与真实局限</summary><div class="detail-body"><ul><li>同机构匹配使用去空白、转小写后的名称，不能自动识别所有机构别名。</li><li>合作者冲突依赖已有关系，按当前年份减 5 的阈值筛选；数据库缺失的关系无法凭空发现。</li><li>年份条件表示候选人至少有一篇达到阈值的论文，不保证全部推荐证据都满足该年份。</li><li>机构多样性是优先策略：不同机构人数不足时会补入其余候选人，不是强制一机构一人。</li><li>有些候选人可能仅来自画像或元数据，没有足够论文证据。向量路线不可用时可能静默回退，不能套用文档 RAG 的完整降级字段。</li></ul></div></details>
+        <a class="source-link" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/backend/apps/recommendations/retrieval.py">阅读审稿人推荐实现 <span aria-hidden="true">↗</span></a>
+      </article>
+    </section>
+
+    <section class="section agent-section" id="agent">
+      <div class="wrap">
+        <div class="section-heading"><div><p class="eyebrow">04 / INSIDE THE AGENT</p><h2>一句编辑需求，怎样变成行动？</h2></div><p>这是一个 LangGraph 单 Agent 工具循环。Skills 按需提供流程指引；工具按结构化参数执行具体任务。</p></div>
+        <div class="agent-layout">
+          <div class="agent-explanation"><h3>理解 → 调工具 → 看结果 → 继续</h3><p>DeepSeek 根据编辑需求和已有上下文选择工具。工具返回结构化结果，模型再判断是否继续，直到给出答案或达到预算上限。</p><div class="loop-diagram"><span>Context</span><b>→</b><span>Model</span><b>→</b><span>Tools</span><small>工具结果回到上下文，进入下一轮 ↶</small></div><dl class="agent-facts"><div><dt>6 轮 / 12 次</dt><dd>默认模型轮数与工具调用上限，可配置；预算耗尽后尝试基于已有结果总结。</dd></div><div><dt>10 个工具 / 4 个 Skills</dt><dd>默认注册表包含技能加载、证据检索、学术核验、推荐、解释和草稿；技能覆盖投稿检查、稿件分析、候选选择、邀请准备。</dd></div><div><dt>模板邀请草稿</dt><dd>工具使用候选姓名、稿件标题和已有论文标题拼装英文邮件，输出标记为待人工复核。</dd></div></dl></div>
+          <div class="agent-demo"><div class="demo-header"><span class="pill">预设轨迹演示</span><span id="demo-position">1 / 5</span></div><div class="user-bubble">推荐 5 位审稿人，尽量来自不同机构，并为前 3 位准备邀请草稿。</div><div class="trace-card" aria-live="polite" aria-atomic="true"><span class="trace-label" id="trace-label">STEP 01 · 加载流程</span><h4 id="trace-title">先知道这项任务怎么完成</h4><code id="trace-tool">load_editor_skill</code><p id="trace-description">加载 reviewer_selection 的可信流程指引，明确约束和完成检查。这是单 Agent 中的技能加载，不是另起一个 Agent。</p></div><div class="demo-controls"><button type="button" id="demo-prev" aria-label="上一阶段" disabled>←</button><span>点击逐步查看</span><button type="button" id="demo-next" aria-label="下一阶段">→</button></div><p class="demo-caption">用于解释可能的工具序列；真实模型的选择、返回结果和轮数可能不同。该演示不产生真实推荐。</p></div>
+        </div>
+        <div class="three-grid agent-notes"><article><h3>工具权限</h3><p>READ 与 DRAFT 可自动执行；ACTION 默认要求审批。代码具备 interrupt / resume 机制，但默认注册表中没有实际 ACTION 工具。</p></article><article><h3>上下文管理</h3><p>工具结果限长、Snip、Microcompact、Context Collapse、模型摘要逐层控制上下文。摘要失败连续达到阈值后停止自动压缩尝试。</p></article><article><h3>持久化与恢复</h3><p>AgentRun.id 对应 thread_id，Django 保存检查点。Celery 租约与超时对账控制重复执行；不提供外部动作 exactly-once 保证。</p></article></div>
+        <a class="source-link" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/backend/apps/agent/graph.py">阅读 LangGraph 运行图 ↗</a>
+      </div>
+    </section>
+
+    <section class="section wrap" id="architecture">
+      <div class="section-heading"><div><p class="eyebrow">05 / ENGINEERING MAP</p><h2>从浏览器，走到模型与数据。</h2></div><p>确定性业务处理、模型推理与异步执行分别承担职责。点击源码入口可继续深入。</p></div>
+      <div class="architecture-map" aria-label="前端到后端、异步队列、模型服务和存储的架构">
+        <div class="arch-node arch-client"><small>交互入口</small><strong>Vue 3 + Element Plus</strong><span>稿件队列 · 元数据表单 · 候选证据 · Agent 对话</span></div>
+        <div class="arch-arrow">↓ <span>Nginx 反向代理 / HTTP API</span></div>
+        <div class="arch-node arch-api"><small>业务边界</small><strong>Django REST Framework</strong><span>同步解析与推荐 · Agent 请求校验、入库与投递</span></div>
+        <div class="architecture-branches"><div class="arch-node"><small>存储</small><strong>PostgreSQL + pgvector</strong><span>稿件、画像、向量、证据、会话、运行与检查点</span></div><div class="arch-node"><small>Agent 异步执行</small><strong>Redis → Celery → LangGraph</strong><span>接收 202 后轮询 · worker 执行 · beat 定时对账</span></div><div class="arch-node"><small>推理与外部证据</small><strong>DeepSeek / Ollama / MCP</strong><span>生成式推理 / 向量生成 / 公共学术数据</span></div></div>
+        <p class="arch-footnote">Django 和 worker 按业务路径访问模型服务与数据库；上传文件保存在共享 media volume。Redis 不替代业务数据库与检查点存储。</p>
+      </div>
+      <div class="two-grid module-grid">
+        <article class="module"><span class="module-tag">DOMAIN</span><h3>稿件与解析</h3><p>Manuscript 关联作者、机构与源文件；ExtractionRun 保存解析记录；DocumentChunk 自关联表达父子结构。重新解析会产生新的运行记录。</p><a href="https://github.com/HxZhu0629/rrs_editor_agent/tree/main/backend/apps/extraction">apps/manuscripts · apps/extraction ↗</a></article>
+        <article class="module"><span class="module-tag">RECOMMENDATION</span><h3>画像、推荐与证据</h3><p>ReviewerProfile 关联论文与合作者。直接推荐接口持久化 RecommendationRun / Item / Evidence；Agent 推荐结果保存在运行结果与消息元数据中。</p><a href="https://github.com/HxZhu0629/rrs_editor_agent/tree/main/backend/apps/recommendations">apps/reviewers · apps/recommendations ↗</a></article>
+        <article class="module"><span class="module-tag">EXTERNAL EVIDENCE</span><h3>只读学术 MCP</h3><p>独立 stdio 服务访问 OpenAlex、Crossref、ORCID。客户端限制可调用工具；结果保留来源标识。身份候选需要人工确认，“未查到撤稿通知”不是无风险证明。</p><a href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/backend/mcp_servers/academic_server.py">mcp_servers/academic_server.py ↗</a></article>
+        <article class="module"><span class="module-tag">OPERATIONS</span><h3>可靠性与可观测性</h3><p>JSON 日志关联 request / trace / run；Prometheus 提供耗时、队列与降级指标。就绪检查覆盖数据库和 Redis；Langfuse 默认关闭，可选启用。</p><a href="https://github.com/HxZhu0629/rrs_editor_agent/tree/main/backend/apps/common">apps/common · docs/reliability.md ↗</a></article>
+      </div>
+      <details class="api-details"><summary>查看主要 API 与调用方式</summary><div class="detail-body table-scroll"><table><thead><tr><th>任务</th><th>方法与路径</th><th>执行方式</th></tr></thead><tbody><tr><td>上传文件</td><td><code>POST /api/manuscripts/upload/</code></td><td>表单字段 file</td></tr><tr><td>解析元数据</td><td><code>POST /api/extraction/manuscripts/{id}/run/</code></td><td>同步请求</td></tr><tr><td>人工确认</td><td><code>PATCH /api/manuscripts/{id}/confirm/</code></td><td>更新稿件与作者信息</td></tr><tr><td>文档检索</td><td><code>GET /api/extraction/runs/{id}/vector-search/?q=...</code></td><td>同步返回证据</td></tr><tr><td>运行推荐</td><td><code>POST /api/recommendations/run/</code></td><td>同步，含 manuscript_id、top_k</td></tr><tr><td>创建对话</td><td><code>POST /api/agent/conversations/</code></td><td>绑定 manuscript_id</td></tr><tr><td>发送任务</td><td><code>POST /api/agent/conversations/{id}/messages/</code></td><td>接受后返回 202</td></tr><tr><td>查询运行</td><td><code>GET /api/agent/runs/{id}/</code></td><td>前端轮询</td></tr><tr><td>恢复审批</td><td><code>POST /api/agent/runs/{id}/approval/</code></td><td>approved / approved_call_ids</td></tr></tbody></table></div></details>
+    </section>
+
+    <section class="section tinted" id="evaluation"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">06 / MEASURE WHAT MATTERS</p><h2>能执行，与做得对，都要验证。</h2></div><p>HTTP 202 表示任务被接受；运行 success 也可能来自预算结束。产品效果需要独立标注与任务验收。</p></div>
+      <div class="three-grid evaluation-grid"><article><span class="evaluation-icon">R</span><h3>检索质量</h3><p>使用 qrels 标注证据相关性，计算 Recall、MRR、nDCG。指标与标注覆盖率一起看；未标注不等于不相关。</p></article><article><span class="evaluation-icon">A</span><h3>Agent 质量</h3><p>评估工具选择、参数、调用顺序及规则通过情况。任务成功、证据支持、约束保留等结果仍需人工判断。</p></article><article><span class="evaluation-icon">Δ</span><h3>回归与对比</h3><p>按稿件或任务组冻结 dev / test，对同一组案例进行版本对照。失败案例保留，追踪根因、修改与回归结果。</p></article></div>
+      <div class="evaluation-note"><strong>仓库提供评测能力，不代表已经证明业务效果。</strong><p>demo_cases.jsonl 是 synthetic 合成示例。自动测试使用受控模型和工具返回值，不能替代真实模型任务成功率。token 统计也不覆盖全部内部调用成本。</p><a class="text-link" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/data/evaluation/README.md">打开完整评测指南 →</a></div>
+    </div></section>
+
+    <section class="section wrap" id="start">
+      <div class="section-heading"><div><p class="eyebrow">07 / RUN IT YOURSELF</p><h2>看懂之后，把项目跑起来。</h2></div><p>这张网页无需安装即可阅读；运行完整编辑工作台，需要自己的后端服务、数据和模型配置。</p></div>
+      <div class="two-grid setup-grid"><div><h3>本地运行需要什么？</h3><ol class="setup-list"><li><b>Docker 与 Compose</b><span>运行 Django、PostgreSQL、Redis、worker、beat 和前端。</span></li><li><b>DeepSeek API Key</b><span>用于元数据抽取与 Agent 推理；填入本地 .env。</span></li><li><b>Ollama 与 embedding 模型</b><span>默认 nomic-embed-text:latest；容器需要能访问 Ollama 地址。</span></li><li><b>审稿人数据与索引</b><span>新安装不会附带真实稿件或候选库。先导入数据，再按需回填论文和文档向量。</span></li></ol></div><div class="terminal"><div class="terminal-bar"><span><i></i><i></i><i></i></span><span>PowerShell / 项目启动</span><button class="copy-button" type="button" data-copy="start-code">复制</button></div><pre><code id="start-code">git clone git@github.com:HxZhu0629/rrs_editor_agent.git
+cd rrs_editor_agent
+Copy-Item .env.example .env
+
+# 先编辑 .env：配置随机密钥、DeepSeek Key 和 Ollama 地址
+ollama pull nomic-embed-text:latest
+docker compose -f docker-compose.yml up -d --build</code></pre><div class="terminal-footer">服务就绪后访问 <code>http://localhost</code>。显式指定 compose 文件可避开本机专用 override 配置。</div></div></div>
+      <details><summary>导入数据与生成向量</summary><div class="detail-body"><p>使用仓库脚本抓取或准备符合导入格式的 OpenAlex JSON。以下命令假定文件已准备好；实际文件路径和规模按需调整。</p><pre class="light-code"><code>docker compose -f docker-compose.yml cp data/your-dataset.json backend:/tmp/dataset.json
+docker compose -f docker-compose.yml exec backend python manage.py import_openalex_dataset --file /tmp/dataset.json
+docker compose -f docker-compose.yml exec backend python manage.py backfill_reviewer_paper_embeddings --only-missing
+docker compose -f docker-compose.yml exec backend python manage.py backfill_document_chunk_embeddings --only-missing</code></pre><p>数据获取和导入代码可能填入演示邮箱或 noemail.local 占位邮箱，这些不是核验过的联系方式。邀请前需要确认真实身份与联系方式。</p></div></details>
+      <div class="pages-callout"><span class="pages-icon" aria-hidden="true">↗</span><div><h3>这张页面，如何让所有人直接打开？</h3><p>GitHub Pages 托管这里的 HTML、CSS、JavaScript。代码推送后，专用 Actions 工作流发布 site/ 目录。网站没有模型密钥，也不依赖访问者的本地环境。</p><p>Django、Celery、数据库和真实 Agent 需要另外部署。GitHub Pages 无法运行 Python 后端或数据库。</p></div></div>
+    </section>
+
+    <section class="section wrap faq-section" id="faq"><div class="section-heading"><div><p class="eyebrow">08 / BEFORE YOU GO</p><h2>边界，讲清楚才有用。</h2></div></div>
+      <details><summary>这是可直接对外提供服务的生产系统吗？</summary><div class="detail-body"><p>当前适合作为原型与学习项目。API 默认 AllowAny，CORS 全放开，尚未实现用户级数据隔离。公网部署完整系统需要落实身份认证、授权、TLS、媒体访问控制和备份恢复。server compose 只减少公开端口，不会自动补齐这些能力。</p></div></details>
+      <details><summary>可以在这张介绍页上传稿件或和模型对话吗？</summary><div class="detail-body"><p>本页是独立静态导览，按钮只切换预设讲解内容。完整工作台位于 frontend/，连接 Django API 后才能处理稿件和执行 Agent。真实模型调用可能产生费用，取决于模型供应商和使用量。</p></div></details>
+      <details><summary>会自动发送审稿邀请吗？</summary><div class="detail-body"><p>不会。当前草稿工具没有邮件发送能力。工程中预留 ACTION 审批与恢复机制，并通过受控测试工具验证；如要接入真实外部动作，仍需增加发送工具、权限与幂等处理。</p></div></details>
+      <details><summary>代码里的“记忆”和“技能”是什么？</summary><div class="detail-body"><p>记忆是按 managed、user、project、local、auto、team 加载的分层指令，支持文件 include 与路径条件；它不是自动训练出的长期知识库。Skills 是包含工具建议和完成检查的可信流程说明，按需载入同一个 Agent 上下文。</p></div></details>
+      <details><summary>这个导览的内容依据是什么？</summary><div class="detail-body"><p>介绍依据 backend/apps/ 下的接口、检索、Agent、数据模型和配置实现编写。源码入口链接到 main 分支，具体行为以实际运行版本为准。页面中的流程示意和预设轨迹不作为真实实验或业务指标。</p></div></details>
+    </section>
+    <section class="closing wrap"><p class="eyebrow">EXPLORE THE SOURCE</p><h2>理解一个 Agent，<br>从它如何使用证据开始。</h2><a class="button primary" href="https://github.com/HxZhu0629/rrs_editor_agent">在 GitHub 阅读源码 ↗</a><a class="text-link" href="https://github.com/HxZhu0629/rrs_editor_agent/blob/main/docs/product-copy.md">查看产品与 Agent 文案 →</a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="#"><span class="brand-symbol">R</span><span>RRS</span></a><p>Reviewer Recommendation System<br><span>项目导览 · 证据、工具与编辑决策</span></p><a href="#">返回顶部 ↑</a></footer>
+</body>
+</html>
